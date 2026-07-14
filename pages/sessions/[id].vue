@@ -19,10 +19,18 @@
           </div>
           <div class="actions">
             <button class="btn btn-live" :disabled="!session.products.length" @click="enterLive">🔴 直播模式</button>
+            <button class="btn btn-outline" @click="copySession" :disabled="copying">{{ copying ? '复制中...' : '📋 复制场次' }}</button>
             <button class="btn btn-outline" @click="triggerUpload">📥 上传提报表</button>
             <button class="btn btn-outline" @click="openAdd">➕ 添加产品</button>
             <input ref="fileInput" type="file" accept=".xlsx,.xls" style="display:none" @change="onFileChange">
           </div>
+        </div>
+        <!-- 状态切换 -->
+        <div class="status-bar">
+          <span class="status-label">状态：</span>
+          <button v-for="s in statusOptions" :key="s.value"
+            :class="['btn btn-sm', session.status === s.value ? s.activeClass : 'btn-outline']"
+            @click="changeStatus(s.value)">{{ s.label }}</button>
         </div>
       </div>
 
@@ -53,6 +61,7 @@
                 <span v-if="getSubmission(sp).shipTime">· {{ getSubmission(sp).shipTime }}</span>
                 <span v-if="getSubmission(sp).stock">· {{ getSubmission(sp).stock }}</span>
               </div>
+              <button class="btn btn-sm btn-outline edit-sub-btn" @click.stop="editSubmission(sp)">编辑</button>
             </template>
             <div v-else class="live-info-empty">暂无提报表信息</div>
           </div>
@@ -152,6 +161,9 @@
         </div>
       </div>
     </div>
+    <!-- 提报表编辑弹窗 -->
+    <SubmissionEdit ref="submissionEditRef" @close="onSubmissionEditClose" @saved="onSubmissionSaved" />
+
     <!-- 直播模式全屏覆盖层 -->
     <LiveMode ref="liveModeRef" :products="session?.products || []" :session-name="session?.name || ''" @close="onLiveClose" />
   </div>
@@ -168,6 +180,43 @@ const { parseExcel, matchProducts, getDisplayFields } = useSubmission()
 const liveModeRef = ref(null)
 function enterLive() { liveModeRef.value?.enter() }
 function onLiveClose() { /* 退出后可刷新数据 */ }
+
+// --- 复制场次 ---
+const copying = ref(false)
+const router = useRouter()
+async function copySession() {
+  copying.value = true
+  try {
+    const copy = await $fetch(`/api/sessions/${sessionId}/copy`, { method: 'POST' })
+    alert('场次已复制')
+    router.push(`/sessions/${copy.id}`)
+  } catch (e) {
+    alert('复制失败: ' + (e.data?.message || e.message))
+  } finally {
+    copying.value = false
+  }
+}
+
+// --- 状态切换 ---
+const statusOptions = [
+  { value: 'prep', label: '准备中', activeClass: 'btn-pri' },
+  { value: 'upcoming', label: '即将开播', activeClass: 'btn-pri' },
+  { value: 'done', label: '已结束', activeClass: 'btn-pri' },
+]
+async function changeStatus(status) {
+  try {
+    await $fetch(`/api/sessions/${sessionId}`, { method: 'PUT', body: { status } })
+    session.value.status = status
+  } catch (e) {
+    alert('状态更新失败: ' + (e.data?.message || e.message))
+  }
+}
+
+// --- 提报表编辑 ---
+const submissionEditRef = ref(null)
+function editSubmission(sp) { submissionEditRef.value?.open(sp) }
+function onSubmissionEditClose() {}
+async function onSubmissionSaved() { await refresh() }
 
 // --- 提报表数据读取 ---
 function getSubmission(sp) {
@@ -318,7 +367,10 @@ async function addSelected() {
 .sess-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
 .sess-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .sess-meta { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--txt2); flex-wrap: wrap; }
-.actions { display: flex; gap: 8px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.status-bar { margin-top: 12px; display: flex; align-items: center; gap: 6px; }
+.status-label { font-size: 12px; color: var(--txt2); }
+.edit-sub-btn { margin-top: 6px; font-size: 11px; padding: 3px 8px; }
 .section-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .section-hd h2 { font-size: 16px; }
 .section-hd span { font-size: 13px; color: var(--txt2); }
