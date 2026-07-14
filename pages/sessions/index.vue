@@ -74,11 +74,17 @@
 </template>
 
 <script setup>
+const route = useRoute()
 const { data: sessions, pending, refresh } = await useFetch('/api/sessions')
 
 const showCreate = ref(false)
 const creating = ref(false)
 const form = reactive({ name: '', date: '', platform: 'xiaohongshu', notes: '' })
+
+// 从首页快捷入口跳转时自动打开创建弹窗
+onMounted(() => {
+  if (route.query.new === '1') showCreate.value = true
+})
 
 function dayOf(d) { return d ? d.split('-')[2] : '' }
 function monthOf(d) { return d ? parseInt(d.split('-')[1]) : '' }
