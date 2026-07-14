@@ -30,10 +30,6 @@
               <input v-model="form.giftDelivery" class="input" placeholder="例: 随单">
             </div>
             <div class="form-group">
-              <label>卖点</label>
-              <input v-model="form.sellingPoint" class="input" placeholder="不超过12字">
-            </div>
-            <div class="form-group">
               <label>发货地</label>
               <input v-model="form.shipFrom" class="input" placeholder="例: 义乌/广州">
             </div>
@@ -42,24 +38,12 @@
               <input v-model="form.shipTime" class="input" placeholder="例: 48h">
             </div>
             <div class="form-group">
-              <label>库存</label>
-              <input v-model="form.stock" class="input" placeholder="例: 500+">
-            </div>
-            <div class="form-group">
               <label>保质期</label>
               <input v-model="form.expiryInfo" class="input" placeholder="例: 2026年 3年">
             </div>
             <div class="form-group full-width">
-              <label>不包邮/不发货地区</label>
-              <input v-model="form.excludeRegions" class="input" placeholder="例: 新疆+15">
-            </div>
-            <div class="form-group full-width">
               <label>店铺服务</label>
               <input v-model="form.shopService" class="input" placeholder="例: 支持7天无理由">
-            </div>
-            <div class="form-group full-width">
-              <label>产品链接</label>
-              <input v-model="form.productLink" class="input" placeholder="https://...">
             </div>
           </div>
         </div>
@@ -82,8 +66,7 @@ const sessionProduct = ref(null)
 
 const FIELDS = [
   'livePrice', 'retailPrice', 'discountType', 'gifts', 'giftDelivery',
-  'sellingPoint', 'shipFrom', 'shipTime', 'stock', 'excludeRegions',
-  'shopService', 'expiryInfo', 'productLink', 'productFullName'
+  'shipFrom', 'shipTime', 'shopService', 'expiryInfo', 'productFullName'
 ]
 
 const form = reactive(Object.fromEntries(FIELDS.map(f => [f, ''])))

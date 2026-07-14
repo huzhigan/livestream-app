@@ -59,11 +59,10 @@
               <div class="live-sub">
                 <span v-if="getSubmission(sp).shipFrom">{{ getSubmission(sp).shipFrom }}</span>
                 <span v-if="getSubmission(sp).shipTime">· {{ getSubmission(sp).shipTime }}</span>
-                <span v-if="getSubmission(sp).stock">· {{ getSubmission(sp).stock }}</span>
               </div>
-              <button class="btn btn-sm btn-outline edit-sub-btn" @click.stop="editSubmission(sp)">编辑</button>
             </template>
             <div v-else class="live-info-empty">暂无提报表信息</div>
+            <button class="btn btn-sm btn-outline edit-sub-btn" @click.stop="editSubmission(sp)">编辑</button>
           </div>
           <button class="p-remove" @click.stop="removeProduct(sp)" title="移除">&times;</button>
         </div>
@@ -86,8 +85,7 @@
           <div v-if="getSubmission(detailProduct)" class="detail-submission">
             <div v-for="f in getDisplayFields(getSubmission(detailProduct))" :key="f.key" class="sub-field">
               <span class="sub-label">{{ f.label }}</span>
-              <span v-if="f.key === 'productLink'"><a :href="f.value" target="_blank" class="sub-link">查看链接</a></span>
-              <span v-else :class="['sub-value', { 'sub-price': f.key === 'livePrice', 'sub-gift': f.key === 'gifts' }]">{{ f.value }}</span>
+              <span :class="['sub-value', { 'sub-price': f.key === 'livePrice', 'sub-gift': f.key === 'gifts' }]">{{ f.value }}</span>
             </div>
           </div>
           <div v-if="detailProduct.product.htmlContent" class="detail-html" v-html="detailProduct.product.htmlContent"></div>
@@ -175,6 +173,7 @@ const sessionId = route.params.id
 const { data: session, pending, refresh } = await useFetch(`/api/sessions/${sessionId}`)
 const { data: allProducts } = await useFetch('/api/products')
 const { parseExcel, matchProducts, getDisplayFields } = useSubmission()
+const { toast } = useToast()
 
 // --- 直播模式 ---
 const liveModeRef = ref(null)
@@ -188,7 +187,7 @@ async function copySession() {
   copying.value = true
   try {
     const copy = await $fetch(`/api/sessions/${sessionId}/copy`, { method: 'POST' })
-    alert('场次已复制')
+    toast('场次已复制', 'success')
     router.push(`/sessions/${copy.id}`)
   } catch (e) {
     alert('复制失败: ' + (e.data?.message || e.message))
@@ -274,6 +273,7 @@ async function saveSubmission() {
     })
     await refresh()
     matchResults.value = null
+    toast(`已导入 ${updates.length} 个产品的提报表数据`, 'success')
   } catch (e) {
     alert('保存失败: ' + (e.data?.message || e.message))
   } finally {
@@ -318,6 +318,7 @@ async function removeProduct(sp) {
   try {
     await $fetch(`/api/sessions/${sessionId}/products/${sp.productId}`, { method: 'DELETE' })
     await refresh()
+    toast(`已移除「${sp.product.name}」`, 'success')
   } catch (e) {
     alert('移除失败: ' + (e.data?.message || e.message))
   }
@@ -356,6 +357,7 @@ async function addSelected() {
     await $fetch(`/api/sessions/${sessionId}/products`, { method: 'POST', body: { productId: pid } })
   }
   await refresh(); closeAdd()
+  toast(`已添加 ${pickedIds.value.size} 个产品`, 'success')
 }
 </script>
 
@@ -414,7 +416,6 @@ async function addSelected() {
 .sub-value { color: var(--txt); }
 .sub-price { color: var(--red); font-weight: 700; font-size: 16px; }
 .sub-gift { color: var(--ok); font-weight: 500; }
-.sub-link { color: var(--pri); text-decoration: underline; }
 
 /* 添加产品弹窗 */
 .pick-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; }

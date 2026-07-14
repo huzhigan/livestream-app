@@ -1,45 +1,46 @@
 <template>
   <Teleport to="body">
-    <div :class="['modal-overlay', { open: !!product }]" @click.self="emit('close')">
-      <div v-if="product" class="modal" style="max-width:680px">
-        <div class="modal-hd">
-          <h2>{{ product.name }}</h2>
-          <div class="modal-hd-actions">
-            <button class="btn btn-sm btn-outline" @click="emit('edit', product)">编辑</button>
-            <button class="btn btn-sm btn-outline btn-danger" @click="emit('delete', product)">删除</button>
-            <button class="modal-close" @click="emit('close')">&times;</button>
+    <div v-if="product" class="fs-overlay" @click.self="emit('close')">
+      <div class="fs-panel">
+        <div class="fs-hd">
+          <div class="fs-hd-left">
+            <h2>{{ product.name }}</h2>
+            <div class="fs-hd-sub">{{ product.brand }} · {{ product.spec }}</div>
+          </div>
+          <div class="fs-hd-actions">
+            <button class="btn btn-outline" @click="emit('edit', product)">编辑</button>
+            <button class="btn btn-outline btn-danger" @click="emit('delete', product)">删除</button>
+            <button class="fs-close" @click="emit('close')">&times;</button>
           </div>
         </div>
-        <div class="modal-bd">
-          <div class="m-brand">{{ product.brand }}</div>
-          <div class="m-spec">{{ product.spec }}</div>
-          <div class="m-tags">
+        <div class="fs-bd">
+          <div class="fs-tags">
             <span v-for="t in tags" :key="t" class="tag">{{ t }}</span>
           </div>
 
           <!-- 有 htmlContent 时直接渲染 -->
-          <div v-if="product.htmlContent" class="m-content" v-html="product.htmlContent"></div>
+          <div v-if="product.htmlContent" class="fs-content" v-html="product.htmlContent"></div>
 
           <!-- 无内容时显示基础信息卡片 -->
-          <div v-else class="m-placeholder">
-            <div class="m-info-grid">
-              <div class="m-info-item">
+          <div v-else class="fs-placeholder">
+            <div class="fs-info-grid">
+              <div class="fs-info-item">
                 <label>品牌</label>{{ product.brand }}
               </div>
-              <div class="m-info-item">
+              <div class="fs-info-item">
                 <label>规格</label>{{ product.spec || '—' }}
               </div>
-              <div class="m-info-item">
+              <div class="fs-info-item">
                 <label>品类</label>{{ product.category || '—' }}
               </div>
-              <div class="m-info-item" v-if="tags.length">
+              <div class="fs-info-item" v-if="tags.length">
                 <label>标签</label>
-                <div class="m-tag-list">
+                <div class="fs-tag-list">
                   <span v-for="t in tags" :key="t" class="tag">{{ t }}</span>
                 </div>
               </div>
             </div>
-            <div class="m-empty-note">暂无产品详细资料（产品导入后将在此展示完整内容）</div>
+            <div class="fs-empty-note">暂无产品详细资料（产品导入后将在此展示完整内容）</div>
           </div>
         </div>
       </div>
@@ -70,54 +71,60 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
-  display: none; align-items: center; justify-content: center; padding: 20px;
+.fs-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
 }
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--card); border-radius: 14px; width: 100%; max-width: 680px;
-  max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;
+.fs-panel {
+  background: var(--card); width: 94vw; height: 92vh;
+  border-radius: 16px; display: flex; flex-direction: column;
+  overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
-.modal-hd {
-  padding: 20px 24px; border-bottom: 1px solid var(--bdr);
+.fs-hd {
+  padding: 20px 28px; border-bottom: 1px solid var(--bdr);
   display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
 }
-.modal-hd h2 { font-size: 18px; }
-.modal-hd-actions { display: flex; align-items: center; gap: 8px; }
+.fs-hd-left { flex: 1; min-width: 0; }
+.fs-hd h2 { font-size: 22px; margin-bottom: 4px; }
+.fs-hd-sub { font-size: 14px; color: var(--txt2); }
+.fs-hd-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .btn-danger { color: var(--red) !important; border-color: var(--red) !important; }
 .btn-danger:hover { background: #FEF2F2 !important; }
-.modal-close {
-  font-size: 22px; cursor: pointer; color: var(--txt2);
-  background: none; border: none; padding: 4px 8px;
+.fs-close {
+  font-size: 28px; cursor: pointer; color: var(--txt2);
+  background: none; border: none; padding: 4px 10px; line-height: 1;
 }
-.modal-bd { padding: 16px 24px 24px; overflow-y: auto; flex: 1; }
+.fs-close:hover { color: var(--txt); }
+.fs-bd { padding: 20px 28px 28px; overflow-y: auto; flex: 1; }
 
-.m-brand { font-size: 14px; color: var(--txt2); margin-bottom: 4px; }
-.m-spec { font-size: 13px; color: var(--txt2); margin-bottom: 12px; }
-.m-tags { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.fs-tags { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
 
-.m-content {
-  font-size: 14px; line-height: 1.8;
+.fs-content {
+  font-size: 15px; line-height: 1.8;
+  max-width: 960px;
 }
-.m-content :deep(table) { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
-.m-content :deep(th), .m-content :deep(td) { padding: 6px 8px; border: 1px solid var(--bdr); text-align: left; }
-.m-content :deep(th) { background: var(--bg); }
-.m-content :deep([style*="display:none"]) { display: block !important; }
+.fs-content :deep(table) { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+.fs-content :deep(th), .fs-content :deep(td) { padding: 8px 10px; border: 1px solid var(--bdr); text-align: left; }
+.fs-content :deep(th) { background: var(--bg); }
+.fs-content :deep(img) { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+.fs-content :deep([style*="display:none"]) { display: block !important; }
 
-.m-placeholder { margin-top: 8px; }
-.m-info-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+.fs-placeholder { margin-top: 8px; }
+.fs-info-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px; margin-bottom: 20px;
 }
-.m-info-item {
-  background: var(--bg); padding: 12px; border-radius: 8px; font-size: 14px;
+.fs-info-item {
+  background: var(--bg); padding: 16px; border-radius: 10px; font-size: 15px;
 }
-.m-info-item label {
-  display: block; font-size: 11px; color: var(--txt2); margin-bottom: 4px;
+.fs-info-item label {
+  display: block; font-size: 12px; color: var(--txt2); margin-bottom: 6px;
 }
-.m-tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
-.m-empty-note {
-  text-align: center; padding: 24px; color: var(--txt2);
-  font-size: 13px; border: 1px dashed var(--bdr); border-radius: 8px;
+.fs-tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.fs-empty-note {
+  text-align: center; padding: 32px; color: var(--txt2);
+  font-size: 14px; border: 1px dashed var(--bdr); border-radius: 10px;
 }
 </style>

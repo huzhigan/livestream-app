@@ -1,23 +1,19 @@
 // composables/useSubmission.ts — 提报表 Excel 解析与产品匹配逻辑
 
-// 小红书平台列索引 → 字段名映射（共 18 列 A-R）
+// 小红书平台列索引 → 字段名映射
 const XHS_COLUMNS: Record<number, string> = {
   0: 'productFullName',   // A: 品牌名-产品名-规格
   2: 'retailPrice',       // C: 日常/官方价
-  3: 'sellingPoint',      // D: 产品卖点概括
   4: 'livePrice',         // E: 直播到手价
   5: 'discountType',      // F: 优惠方式
   6: 'gifts',             // G: 直播赠品
   10: 'giftDelivery',     // K: 赠品配送方式
   11: 'shipFrom',         // L: 发货地
   12: 'shipTime',         // M: 发货时效
-  13: 'stock',            // N: 库存
-  14: 'excludeRegions',   // O: 不包邮/不发货地区
   15: 'shopService',      // P: 店铺服务
   16: 'expiryInfo',       // Q: 保质期/到期日期
-  17: 'productLink',      // R: 产品链接
 }
-// B(图片) H(赠品图片) I(佣金) J(邀请码) 不导入
+// B(图片) D(卖点) H(赠品图片) I(佣金) J(邀请码) N(库存) O(不包邮地区) R(产品链接) 不导入
 
 export interface ExcelRow {
   productFullName: string
@@ -33,18 +29,14 @@ export interface MatchResult {
 // 直播卡片上展示的字段及中文标签
 const DISPLAY_LABELS: Record<string, string> = {
   retailPrice: '日常价',
-  sellingPoint: '卖点',
   livePrice: '直播价',
   discountType: '优惠方式',
   gifts: '赠品',
   giftDelivery: '赠品配送',
   shipFrom: '发货地',
   shipTime: '发货时效',
-  stock: '库存',
-  excludeRegions: '不包邮地区',
   shopService: '店铺服务',
   expiryInfo: '保质期',
-  productLink: '产品链接',
 }
 
 export function useSubmission() {
