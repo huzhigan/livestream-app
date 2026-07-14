@@ -354,6 +354,7 @@ async function addSelected() {
 .detail-html :deep(table) { width: 100%; border-collapse: collapse; margin: 8px 0; }
 .detail-html :deep(th), .detail-html :deep(td) { padding: 6px 8px; border: 1px solid var(--bdr); text-align: left; font-size: 13px; }
 .detail-html :deep(th) { background: var(--bg); }
+.detail-html :deep([style*="display:none"]) { display: block !important; }
 .detail-empty { text-align: center; padding: 24px; color: var(--txt2); }
 .detail-submission { background: #F9FAFB; border: 1px solid var(--bdr); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
 .sub-field { display: flex; gap: 8px; padding: 4px 0; font-size: 13px; }

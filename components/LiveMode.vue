@@ -168,6 +168,7 @@ defineExpose({ enter })
 .lc-content :deep(table) { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
 .lc-content :deep(th), .lc-content :deep(td) { padding: 6px 8px; border: 1px solid var(--bdr); text-align: left; }
 .lc-content :deep(th) { background: var(--bg); }
+.lc-content :deep([style*="display:none"]) { display: block !important; }
 .lc-content-empty {
   text-align: center; padding: 24px; color: var(--txt2);
   font-size: 14px; border-top: 1px solid var(--bdr); margin-top: 16px;

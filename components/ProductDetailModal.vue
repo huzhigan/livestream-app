@@ -1,10 +1,14 @@
 <template>
   <Teleport to="body">
-    <div :class="['modal-overlay', { open: !!product }]" @click.self="$emit('close')">
+    <div :class="['modal-overlay', { open: !!product }]" @click.self="emit('close')">
       <div v-if="product" class="modal" style="max-width:680px">
         <div class="modal-hd">
           <h2>{{ product.name }}</h2>
-          <button class="modal-close" @click="$emit('close')">&times;</button>
+          <div class="modal-hd-actions">
+            <button class="btn btn-sm btn-outline" @click="emit('edit', product)">编辑</button>
+            <button class="btn btn-sm btn-outline btn-danger" @click="emit('delete', product)">删除</button>
+            <button class="modal-close" @click="emit('close')">&times;</button>
+          </div>
         </div>
         <div class="modal-bd">
           <div class="m-brand">{{ product.brand }}</div>
@@ -47,7 +51,7 @@
 const props = defineProps({
   product: { type: Object, default: null },
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'edit', 'delete'])
 
 const tags = computed(() => {
   if (!props.product) return []
@@ -80,6 +84,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   display: flex; align-items: center; justify-content: space-between;
 }
 .modal-hd h2 { font-size: 18px; }
+.modal-hd-actions { display: flex; align-items: center; gap: 8px; }
+.btn-danger { color: var(--red) !important; border-color: var(--red) !important; }
+.btn-danger:hover { background: #FEF2F2 !important; }
 .modal-close {
   font-size: 22px; cursor: pointer; color: var(--txt2);
   background: none; border: none; padding: 4px 8px;
@@ -96,6 +103,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 .m-content :deep(table) { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
 .m-content :deep(th), .m-content :deep(td) { padding: 6px 8px; border: 1px solid var(--bdr); text-align: left; }
 .m-content :deep(th) { background: var(--bg); }
+.m-content :deep([style*="display:none"]) { display: block !important; }
 
 .m-placeholder { margin-top: 8px; }
 .m-info-grid {
