@@ -18,6 +18,7 @@
             </div>
           </div>
           <div class="actions">
+            <button class="btn btn-live" :disabled="!session.products.length" @click="enterLive">🔴 直播模式</button>
             <button class="btn btn-outline" @click="triggerUpload">📥 上传提报表</button>
             <button class="btn btn-outline" @click="openAdd">➕ 添加产品</button>
             <input ref="fileInput" type="file" accept=".xlsx,.xls" style="display:none" @change="onFileChange">
@@ -151,6 +152,8 @@
         </div>
       </div>
     </div>
+    <!-- 直播模式全屏覆盖层 -->
+    <LiveMode ref="liveModeRef" :products="session?.products || []" :session-name="session?.name || ''" @close="onLiveClose" />
   </div>
 </template>
 
@@ -160,6 +163,11 @@ const sessionId = route.params.id
 const { data: session, pending, refresh } = await useFetch(`/api/sessions/${sessionId}`)
 const { data: allProducts } = await useFetch('/api/products')
 const { parseExcel, matchProducts, getDisplayFields } = useSubmission()
+
+// --- 直播模式 ---
+const liveModeRef = ref(null)
+function enterLive() { liveModeRef.value?.enter() }
+function onLiveClose() { /* 退出后可刷新数据 */ }
 
 // --- 提报表数据读取 ---
 function getSubmission(sp) {
