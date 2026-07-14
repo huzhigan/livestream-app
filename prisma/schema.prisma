@@ -1,0 +1,53 @@
+// Prisma Schema — 直播带货资料管理系统
+// 数据模型参照 PROJECT_DOCUMENTATION.md 第四章
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// 产品表 — 存储产品基础信息和 HTML 富文本内容
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   // 产品名称，从 HTML 的 .pg-name 提取
+  brand       String   // 品牌名，从 HTML 的 .pg-brand 提取
+  spec        String   @default("") // 规格，从 HTML 的 .pg-brand 提取
+  category    String   @default("") // 品类（保健品/护肤品/彩妆/个护清洁）
+  tags        String   @default("") // 功能标签，JSON 数组字符串
+  htmlContent String   @default("") // 完整的 HTML 富文本内容，用于直接渲染
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions SessionProduct[]
+}
+
+// 直播场次表
+model Session {
+  id        Int      @id @default(autoincrement())
+  name      String   // 场次名称
+  date      String   // 直播日期 (YYYY-MM-DD)
+  platform  String   @default("xiaohongshu") // 平台: xiaohongshu / kuaishou
+  notes     String   @default("") // 备注
+  status    String   @default("prep") // 状态: prep / upcoming / done
+  createdAt DateTime @default(now())
+
+  products SessionProduct[]
+}
+
+// 场次-产品关联表（多对多中间表）
+model SessionProduct {
+  id             Int      @id @default(autoincrement())
+  sessionId      Int
+  productId      Int
+  sortOrder      Int      // 讲解顺序序号
+  submissionData String   @default("{}") // 提报表附加信息，JSON 字符串
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, productId]) // 同一场次不重复添加同一产品
+}

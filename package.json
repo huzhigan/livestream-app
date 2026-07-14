@@ -1,0 +1,29 @@
+{
+  "name": "livestream-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "db:push": "npx prisma db push",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "npx prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "sortablejs": "^1.15.3",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "nuxt": "^3.14.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0"
+  }
+}
