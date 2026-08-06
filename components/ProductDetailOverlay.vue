@@ -41,7 +41,8 @@
             </div>
           </template>
         </div>
-        <div v-if="sp.product.htmlContent" class="detail-html" v-html="sp.product.htmlContent"></div>
+        <StructuredDetail v-if="structuredData" :data="structuredData" />
+        <div v-else-if="sp.product.htmlContent" class="detail-html" v-html="sp.product.htmlContent"></div>
         <div v-else-if="!getSubmission(sp)" class="detail-empty">暂无详细资料</div>
       </div>
     </div>
@@ -55,6 +56,15 @@ const props = defineProps({
 defineEmits(['close'])
 
 const { isGrouped, getVariants, getDisplayFields } = useSubmission()
+
+const structuredData = computed(() => {
+  const raw = props.sp?.product?.structured
+  if (!raw) return null
+  try {
+    const obj = JSON.parse(raw)
+    return obj && Array.isArray(obj.sections) ? obj : null
+  } catch { return null }
+})
 
 function getSubmission(sp) {
   try {

@@ -18,8 +18,9 @@
             <span v-for="t in tags" :key="t" class="tag">{{ t }}</span>
           </div>
 
-          <!-- 有 htmlContent 时直接渲染 -->
-          <div v-if="product.htmlContent" class="fs-content" v-html="product.htmlContent"></div>
+          <!-- 优先结构化渲染,回退 htmlContent -->
+          <StructuredDetail v-if="structuredData" :data="structuredData" />
+          <div v-else-if="product.htmlContent" class="fs-content" v-html="product.htmlContent"></div>
 
           <!-- 无内容时显示基础信息卡片 -->
           <div v-else class="fs-placeholder">
@@ -57,6 +58,15 @@ const emit = defineEmits(['close', 'edit', 'delete'])
 const tags = computed(() => {
   if (!props.product) return []
   try { return JSON.parse(props.product.tags) } catch { return [] }
+})
+
+const structuredData = computed(() => {
+  const raw = props.product?.structured
+  if (!raw) return null
+  try {
+    const obj = JSON.parse(raw)
+    return obj && Array.isArray(obj.sections) ? obj : null
+  } catch { return null }
 })
 
 // ESC 关闭弹窗

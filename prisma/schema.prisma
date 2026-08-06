@@ -18,7 +18,8 @@ model Product {
   spec        String   @default("") // 规格，从 HTML 的 .pg-brand 提取
   category    String   @default("") // 品类（保健品/护肤品/彩妆/个护清洁）
   tags        String   @default("") // 功能标签，JSON 数组字符串
-  htmlContent String   @default("") // 完整的 HTML 富文本内容，用于直接渲染
+  htmlContent String   @default("") // 完整的 HTML 富文本内容，原始备份，不删除
+  structured  String   @default("") // 解析后的结构化 JSON 字符串，渲染/编辑优先使用
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
