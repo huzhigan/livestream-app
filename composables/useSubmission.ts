@@ -253,6 +253,23 @@ export function useSubmission() {
     return data && Array.isArray(data.variants) && data.variants.length > 0
   }
 
+  /** 计算变体价格范围：提取 livePrice 字符串里的首个数字 */
+  function getPriceRange(variants: ExcelVariant[]): string {
+    const prices = variants
+      .map(v => v.livePrice)
+      .filter(Boolean)
+      .map(p => {
+        const m = String(p).match(/[\d.]+/)
+        return m ? parseFloat(m[0]) : null
+      })
+      .filter(p => p !== null) as number[]
+    if (!prices.length) return '—'
+    const min = Math.min(...prices)
+    const max = Math.max(...prices)
+    if (min === max) return `¥${min}`
+    return `¥${min} - ¥${max}`
+  }
+
   /** 获取变体列表（兼容旧格式，过滤全空的脏数据行） */
   function getVariants(data: any): ExcelVariant[] {
     if (!data) return []
@@ -276,5 +293,5 @@ export function useSubmission() {
     return []
   }
 
-  return { parseExcel, matchProducts, getDisplayFields, isGrouped, getVariants }
+  return { parseExcel, matchProducts, getDisplayFields, isGrouped, getVariants, getPriceRange }
 }
