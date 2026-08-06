@@ -7,6 +7,7 @@
       <NuxtLink to="/sessions" :class="{ active: route.path.startsWith('/sessions') }">直播场次</NuxtLink>
     </nav>
     <slot />
+    <ToastContainer />
   </div>
 </template>
 

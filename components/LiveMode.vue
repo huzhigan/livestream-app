@@ -18,7 +18,21 @@
           <div class="lc-brand">{{ cur.product.brand }} · {{ cur.product.spec }}</div>
 
           <!-- 价格区域 -->
-          <div v-if="sub" class="lc-price-box">
+          <div v-if="sub && isGrouped(sub)" class="lc-grouped-box">
+            <div v-if="sub.liveOrder" class="lc-order-num">顺序 #{{ sub.liveOrder }}</div>
+            <div v-if="commonData.retailPrice" class="lc-orig">日常价 ¥{{ commonData.retailPrice }}</div>
+            <table class="lc-variant-table">
+              <thead><tr><th>规格</th><th>直播价</th><th>赠品</th></tr></thead>
+              <tbody>
+                <tr v-for="(v, vi) in variants" :key="vi">
+                  <td>{{ v.productFullName }}</td>
+                  <td class="lc-v-price">{{ v.livePrice || '—' }}</td>
+                  <td>{{ v.gifts || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else-if="sub" class="lc-price-box">
             <div>
               <div class="lc-price">¥{{ sub.livePrice || '—' }}</div>
               <div v-if="sub.retailPrice" class="lc-orig">日常价 ¥{{ sub.retailPrice }}</div>
@@ -32,23 +46,17 @@
 
           <!-- 底部附加信息 -->
           <div v-if="sub && hasMore" class="lc-more">
-            <div v-if="sub.shipFrom || sub.shipTime" class="lc-more-item">
-              <label>发货地/时效</label>{{ sub.shipFrom || '—' }} {{ sub.shipTime || '' }}
+            <div v-if="commonData.shipFrom || commonData.shipTime" class="lc-more-item">
+              <label>发货地/时效</label>{{ commonData.shipFrom || '—' }} {{ commonData.shipTime || '' }}
             </div>
-            <div v-if="sub.stock" class="lc-more-item">
-              <label>库存</label>{{ sub.stock }}
+            <div v-if="commonData.expiryInfo" class="lc-more-item">
+              <label>保质期</label>{{ commonData.expiryInfo }}
             </div>
-            <div v-if="sub.expiryInfo" class="lc-more-item">
-              <label>保质期</label>{{ sub.expiryInfo }}
+            <div v-if="commonData.discountType" class="lc-more-item">
+              <label>优惠方式</label>{{ commonData.discountType }}
             </div>
-            <div v-if="sub.excludeRegions" class="lc-more-item">
-              <label>不包邮地区</label>{{ sub.excludeRegions }}
-            </div>
-            <div v-if="sub.discountType" class="lc-more-item">
-              <label>优惠方式</label>{{ sub.discountType }}
-            </div>
-            <div v-if="sub.shopService" class="lc-more-item">
-              <label>店铺服务</label>{{ sub.shopService }}
+            <div v-if="commonData.shopService" class="lc-more-item">
+              <label>店铺服务</label>{{ commonData.shopService }}
             </div>
           </div>
         </div>
@@ -65,6 +73,7 @@ const props = defineProps({
   sessionName: { type: String, default: '' },
 })
 const emit = defineEmits(['close'])
+const { isGrouped, getVariants } = useSubmission()
 
 const show = ref(false)
 const currentIdx = ref(0)
@@ -101,13 +110,18 @@ const sub = computed(() => {
   if (!cur.value) return null
   try {
     const obj = JSON.parse(cur.value.submissionData || '{}')
-    return obj.productFullName ? obj : null
+    if (Array.isArray(obj.variants) && obj.variants.length > 0) return obj
+    if (obj.productFullName) return obj
+    return null
   } catch { return null }
 })
+const variants = computed(() => sub.value ? getVariants(sub.value) : [])
+const commonData = computed(() => sub.value?.commonData || sub.value || {})
 const hasMore = computed(() => {
   if (!sub.value) return false
-  return ['shipFrom', 'shipTime', 'stock', 'expiryInfo', 'excludeRegions', 'discountType', 'shopService']
-    .some(k => sub.value[k])
+  const data = isGrouped(sub.value) ? sub.value.commonData : sub.value
+  return ['shipFrom', 'shipTime', 'expiryInfo', 'discountType', 'shopService']
+    .some(k => data[k])
 })
 
 defineExpose({ enter })
@@ -146,8 +160,8 @@ defineExpose({ enter })
 .live-nav.next { right: 24px; }
 
 .live-card {
-  background: #fff; border-radius: 16px; width: 100%; max-width: 700px;
-  max-height: 80vh; overflow-y: auto; padding: 32px;
+  background: #fff; border-radius: 16px; width: 90vw; max-width: 1100px;
+  max-height: 88vh; overflow-y: auto; padding: 32px 40px;
 }
 .lc-order { font-size: 13px; color: var(--pri); font-weight: 600; margin-bottom: 4px; }
 .lc-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
@@ -160,6 +174,17 @@ defineExpose({ enter })
 .lc-price { font-size: 32px; font-weight: 700; color: #DC2626; }
 .lc-orig { font-size: 14px; color: var(--txt2); text-decoration: line-through; }
 .lc-gift { font-size: 15px; color: var(--ok); font-weight: 500; }
+.lc-order-num { font-size: 13px; font-weight: 600; color: var(--pri); margin-bottom: 4px; }
+
+/* 变体表格 */
+.lc-grouped-box {
+  background: #FFF1F2; border-radius: 10px; padding: 16px;
+  margin-bottom: 16px;
+}
+.lc-variant-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+.lc-variant-table th { background: rgba(0,0,0,0.04); padding: 8px 10px; text-align: left; font-size: 12px; color: var(--txt2); border: 1px solid var(--bdr); }
+.lc-variant-table td { padding: 8px 10px; border: 1px solid var(--bdr); vertical-align: top; }
+.lc-variant-table .lc-v-price { color: #DC2626; font-weight: 700; white-space: nowrap; }
 
 .lc-content {
   font-size: 14px; line-height: 1.8; margin-bottom: 16px;

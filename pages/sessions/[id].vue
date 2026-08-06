@@ -37,7 +37,7 @@
       <!-- 产品列表 -->
       <div class="section-hd">
         <h2>产品列表</h2>
-        <span>{{ session.products.length }} 个产品 · 拖拽左侧序号调整讲解顺序</span>
+        <span>{{ session.products.length }} 个产品 · 编辑序号或拖拽左侧调整顺序</span>
       </div>
 
       <div v-if="!session.products.length" class="empty-products">
@@ -46,7 +46,18 @@
 
       <div ref="listEl" class="p-list">
         <div v-for="(sp, idx) in session.products" :key="sp.id" :data-id="sp.product.id" class="p-item card">
-          <div class="p-order drag-handle" title="拖拽排序">{{ idx + 1 }}</div>
+          <div class="p-order drag-handle" title="拖拽排序">
+            <input
+              class="order-input"
+              type="number"
+              :value="idx + 1"
+              min="1"
+              :max="session.products.length"
+              @mousedown.stop
+              @blur="onOrderChange(sp, $event)"
+              @keydown.enter="($event.target).blur()"
+            >
+          </div>
           <div class="p-main" @click="showDetail(sp)">
             <div class="p-name">{{ sp.product.name }}</div>
             <div class="p-brand">{{ sp.product.brand }} · {{ sp.product.spec }}</div>
@@ -54,12 +65,19 @@
           <!-- 提报表信息展示 -->
           <div class="live-info">
             <template v-if="getSubmission(sp)">
-              <div class="live-price">{{ getSubmission(sp).livePrice || '—' }}</div>
-              <div v-if="getSubmission(sp).gifts" class="live-gifts">🎁 {{ getSubmission(sp).gifts }}</div>
-              <div class="live-sub">
-                <span v-if="getSubmission(sp).shipFrom">{{ getSubmission(sp).shipFrom }}</span>
-                <span v-if="getSubmission(sp).shipTime">· {{ getSubmission(sp).shipTime }}</span>
-              </div>
+              <template v-if="isGrouped(getSubmission(sp))">
+                <div class="live-order">顺序 #{{ getSubmission(sp).liveOrder }}</div>
+                <div class="live-variant-count">{{ getVariants(getSubmission(sp)).length }} 个规格</div>
+                <div class="live-price-range">{{ getPriceRange(getVariants(getSubmission(sp))) }}</div>
+              </template>
+              <template v-else>
+                <div class="live-price">{{ getSubmission(sp).livePrice || '—' }}</div>
+                <div v-if="getSubmission(sp).gifts" class="live-gifts">🎁 {{ getSubmission(sp).gifts }}</div>
+                <div class="live-sub">
+                  <span v-if="getSubmission(sp).shipFrom">{{ getSubmission(sp).shipFrom }}</span>
+                  <span v-if="getSubmission(sp).shipTime">· {{ getSubmission(sp).shipTime }}</span>
+                </div>
+              </template>
             </template>
             <div v-else class="live-info-empty">暂无提报表信息</div>
             <button class="btn btn-sm btn-outline edit-sub-btn" @click.stop="editSubmission(sp)">编辑</button>
@@ -69,24 +87,48 @@
       </div>
     </template>
 
-    <!-- 产品详情弹窗 -->
-    <div :class="['modal-overlay', { open: !!detailProduct }]" @click.self="detailProduct = null">
-      <div v-if="detailProduct" class="modal" style="max-width:640px">
-        <div class="modal-hd">
-          <h2>{{ detailProduct.product.name }}</h2>
-          <button class="modal-close" @click="detailProduct = null">&times;</button>
+    <!-- 产品详情弹窗（全屏） -->
+    <div v-if="detailProduct" class="fs-overlay" @click.self="detailProduct = null">
+      <div class="fs-panel">
+        <div class="fs-hd">
+          <div class="fs-hd-left">
+            <h2>{{ detailProduct.product.name }}</h2>
+            <div class="fs-hd-sub">{{ detailProduct.product.brand }} · {{ detailProduct.product.spec }}</div>
+          </div>
+          <button class="fs-close" @click="detailProduct = null">&times;</button>
         </div>
-        <div class="modal-bd">
-          <div class="detail-meta">{{ detailProduct.product.brand }} · {{ detailProduct.product.spec }}</div>
-          <div class="detail-tags">
+        <div class="fs-bd">
+          <div class="fs-tags">
             <span v-for="t in parseTags(detailProduct.product.tags)" :key="t" class="tag">{{ t }}</span>
           </div>
           <!-- 提报表附加信息 -->
           <div v-if="getSubmission(detailProduct)" class="detail-submission">
-            <div v-for="f in getDisplayFields(getSubmission(detailProduct))" :key="f.key" class="sub-field">
-              <span class="sub-label">{{ f.label }}</span>
-              <span :class="['sub-value', { 'sub-price': f.key === 'livePrice', 'sub-gift': f.key === 'gifts' }]">{{ f.value }}</span>
-            </div>
+            <!-- 新格式：变体表格 -->
+            <template v-if="isGrouped(getSubmission(detailProduct))">
+              <table class="variant-table">
+                <thead><tr><th>规格</th><th>直播价</th><th>赠品</th></tr></thead>
+                <tbody>
+                  <tr v-for="(v, vi) in getVariants(getSubmission(detailProduct))" :key="vi">
+                    <td>{{ v.productFullName }}</td>
+                    <td class="price-cell">{{ v.livePrice || '—' }}</td>
+                    <td>{{ v.gifts || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="common-fields">
+                <div v-for="f in getDisplayFields(getSubmission(detailProduct).commonData)" :key="f.key" class="sub-field">
+                  <span class="sub-label">{{ f.label }}</span>
+                  <span class="sub-value">{{ f.value }}</span>
+                </div>
+              </div>
+            </template>
+            <!-- 旧格式兼容 -->
+            <template v-else>
+              <div v-for="f in getDisplayFields(getSubmission(detailProduct))" :key="f.key" class="sub-field">
+                <span class="sub-label">{{ f.label }}</span>
+                <span :class="['sub-value', { 'sub-price': f.key === 'livePrice', 'sub-gift': f.key === 'gifts' }]">{{ f.value }}</span>
+              </div>
+            </template>
           </div>
           <div v-if="detailProduct.product.htmlContent" class="detail-html" v-html="detailProduct.product.htmlContent"></div>
           <div v-else-if="!getSubmission(detailProduct)" class="detail-empty">暂无详细资料</div>
@@ -137,17 +179,21 @@
           </div>
           <!-- 匹配列表 -->
           <div v-for="(mr, i) in matchResults" :key="i" class="match-row">
-            <div class="match-excel-name">{{ mr.excelRow.productFullName }}</div>
-            <div v-if="mr.matchedSp" class="match-result-ok">
-              → {{ mr.matchedSp.product.name }}
+            <div class="match-order">顺序 #{{ mr.group.liveOrder }}</div>
+            <div class="match-excel-name">{{ mr.group.variants[0].productFullName }}</div>
+            <div v-if="mr.group.variants.length > 1" class="match-variant-count">{{ mr.group.variants.length }} 个规格</div>
+            <div v-if="mr.matchedProduct" class="match-result-ok">
+              → {{ mr.matchedProduct.name }}
             </div>
             <div v-else class="match-result-fail">
-              <select class="select" @change="manualMatch(i, $event)">
-                <option value="">手动选择产品...</option>
-                <option v-for="sp in session.products" :key="sp.id" :value="sp.id">
-                  {{ sp.product.name }}
-                </option>
-              </select>
+              <input class="input match-search" placeholder="搜索产品名称..."
+                v-model="matchSearch[i]" @focus="matchSearchFocus = i">
+              <div v-if="matchSearchFocus === i && getMatchProducts(i).length" class="match-dropdown">
+                <div v-for="p in getMatchProducts(i)" :key="p.id"
+                  class="match-dropdown-item" @click="pickMatch(i, p)">
+                  {{ p.name }} <span class="match-dropdown-sub">{{ p.brand }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -172,7 +218,7 @@ const route = useRoute()
 const sessionId = route.params.id
 const { data: session, pending, refresh } = await useFetch(`/api/sessions/${sessionId}`)
 const { data: allProducts } = await useFetch('/api/products')
-const { parseExcel, matchProducts, getDisplayFields } = useSubmission()
+const { parseExcel, matchProducts, getDisplayFields, isGrouped, getVariants } = useSubmission()
 const { toast } = useToast()
 
 // --- 直播模式 ---
@@ -217,12 +263,31 @@ function editSubmission(sp) { submissionEditRef.value?.open(sp) }
 function onSubmissionEditClose() {}
 async function onSubmissionSaved() { await refresh() }
 
-// --- 提报表数据读取 ---
+// --- 提报表数据读取（兼容新旧格式）---
 function getSubmission(sp) {
   try {
     const obj = JSON.parse(sp.submissionData || '{}')
-    return obj.productFullName ? obj : null
+    if (Array.isArray(obj.variants) && obj.variants.length > 0) return obj
+    if (obj.productFullName) return obj
+    return null
   } catch { return null }
+}
+
+// --- 价格范围计算 ---
+function getPriceRange(variants) {
+  const prices = variants
+    .map(v => v.livePrice)
+    .filter(Boolean)
+    .map(p => {
+      const m = String(p).match(/[\d.]+/)
+      return m ? parseFloat(m[0]) : null
+    })
+    .filter(p => p !== null)
+  if (!prices.length) return '—'
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  if (min === max) return `¥${min}`
+  return `¥${min} - ¥${max}`
 }
 
 // --- 提报表上传 ---
@@ -238,46 +303,135 @@ async function onFileChange(e) {
   e.target.value = '' // 重置，允许重复选同一文件
 
   try {
-    const rows = await parseExcel(file)
-    if (!rows.length) { alert('Excel 中没有有效数据行'); return }
-    const results = matchProducts(rows, session.value.products)
+    const groups = await parseExcel(file)
+    if (!groups.length) { alert('Excel 中没有有效数据行'); return }
+    const results = matchProducts(groups, allProducts.value || [])
     matchResults.value = results
   } catch (err) {
     alert('解析 Excel 失败: ' + err.message)
   }
 }
 
-const matchedCount = computed(() => matchResults.value?.filter(r => r.matchedSp).length || 0)
-const unmatchedCount = computed(() => matchResults.value?.filter(r => !r.matchedSp).length || 0)
+const matchedCount = computed(() => matchResults.value?.filter(r => r.matchedProduct).length || 0)
+const unmatchedCount = computed(() => matchResults.value?.filter(r => !r.matchedProduct).length || 0)
 
-function manualMatch(rowIdx, e) {
-  const spId = Number(e.target.value)
-  if (!spId || !matchResults.value) return
-  const sp = session.value.products.find(s => s.id === spId)
-  if (sp) matchResults.value[rowIdx].matchedSp = sp
+// --- 手动匹配搜索 ---
+const matchSearch = reactive({})
+const matchSearchFocus = ref(null)
+
+function getMatchProducts(i) {
+  const q = (matchSearch[i] || '').toLowerCase()
+  const products = allProducts.value || []
+  if (!q) return products.slice(0, 20)
+  return products.filter(p =>
+    p.name.toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q)
+  ).slice(0, 20)
 }
+
+function pickMatch(i, product) {
+  if (!matchResults.value) return
+  matchResults.value[i].matchedProduct = product
+  matchSearchFocus.value = null
+  matchSearch[i] = ''
+}
+
+// 点击其他地方关闭下拉
+const closeMatchDropdown = (e) => {
+  if (!e.target.closest('.match-result-fail')) matchSearchFocus.value = null
+}
+onMounted(() => document.addEventListener('click', closeMatchDropdown))
+onUnmounted(() => document.removeEventListener('click', closeMatchDropdown))
 
 async function saveSubmission() {
   if (!matchResults.value) return
   saving.value = true
   try {
+    // 1. 收集匹配到的产品 ID
+    const matchedIds = new Set(
+      matchResults.value.filter(r => r.matchedProduct).map(r => r.matchedProduct.id)
+    )
+    const existingIds = new Set(session.value.products.map(sp => sp.productId))
+
+    // 2. 添加新产品到场次
+    const newIds = [...matchedIds].filter(id => !existingIds.has(id))
+    for (const productId of newIds) {
+      await $fetch(`/api/sessions/${sessionId}/products`, { method: 'POST', body: { productId } })
+    }
+
+    // 3. 刷新场次获取最新的 SessionProduct 记录
+    if (newIds.length) await refresh()
+
+    // 4. 构建提报表数据（通过 productId 查找对应的 SessionProduct）
     const updates = matchResults.value
-      .filter(r => r.matchedSp)
+      .filter(r => r.matchedProduct)
       .map(r => ({
-        productId: r.matchedSp.productId,
-        submissionData: r.excelRow,
+        productId: r.matchedProduct.id,
+        submissionData: {
+          liveOrder: r.group.liveOrder,
+          variants: r.group.variants,
+          commonData: r.group.commonData,
+        },
       }))
+
+    // 5. 保存提报表数据
     await $fetch(`/api/sessions/${sessionId}/submission`, {
       method: 'PUT',
       body: { updates },
     })
     await refresh()
+
+    // 6. 按直播顺序重新排序：有 liveOrder 的在前（按 liveOrder 升序），无的在后
+    const products = session.value.products
+    const withOrder = products
+      .filter(sp => {
+        try {
+          const d = JSON.parse(sp.submissionData || '{}')
+          return d.liveOrder != null && d.liveOrder > 0
+        } catch { return false }
+      })
+      .sort((a, b) => {
+        const oa = JSON.parse(a.submissionData).liveOrder
+        const ob = JSON.parse(b.submissionData).liveOrder
+        return oa - ob
+      })
+    const withoutOrder = products.filter(sp => {
+      try {
+        const d = JSON.parse(sp.submissionData || '{}')
+        return d.liveOrder == null || d.liveOrder <= 0
+      } catch { return true }
+    })
+    const sorted = [...withOrder, ...withoutOrder]
+    const order = sorted.map((sp, i) => ({ productId: sp.productId, sortOrder: i + 1 }))
+    await $fetch(`/api/sessions/${sessionId}/reorder`, { method: 'PUT', body: { order } })
+    await refresh()
+
     matchResults.value = null
     toast(`已导入 ${updates.length} 个产品的提报表数据`, 'success')
   } catch (e) {
     alert('保存失败: ' + (e.data?.message || e.message))
   } finally {
     saving.value = false
+  }
+}
+
+// --- 编辑序号排序 ---
+async function onOrderChange(sp, evt) {
+  const newVal = parseInt(evt.target.value)
+  const products = session.value.products
+  const oldIdx = products.findIndex(p => p.id === sp.id)
+  if (oldIdx < 0 || isNaN(newVal)) { evt.target.value = oldIdx + 1; return }
+
+  const newIdx = Math.max(0, Math.min(newVal - 1, products.length - 1))
+  if (newIdx === oldIdx) { evt.target.value = oldIdx + 1; return }
+
+  // 移动产品到新位置
+  const moved = products.splice(oldIdx, 1)[0]
+  products.splice(newIdx, 0, moved)
+  const order = products.map((p, i) => ({ productId: p.productId, sortOrder: i + 1 }))
+  try {
+    await $fetch(`/api/sessions/${sessionId}/reorder`, { method: 'PUT', body: { order } })
+  } catch (e) {
+    await refresh()
   }
 }
 
@@ -383,6 +537,13 @@ async function addSelected() {
 .p-item { display: flex; overflow: hidden; position: relative; transition: box-shadow 0.2s; }
 .p-order { width: 44px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--pri); background: var(--pri-l); flex-shrink: 0; cursor: grab; user-select: none; }
 .p-order:active { cursor: grabbing; }
+.order-input {
+  width: 32px; height: 32px; text-align: center; border: 1px solid transparent;
+  border-radius: 6px; font-size: 16px; font-weight: 700; color: var(--pri);
+  background: transparent; outline: none; -moz-appearance: textfield;
+}
+.order-input::-webkit-outer-spin-button, .order-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.order-input:focus { border-color: var(--pri); background: #fff; }
 .drag-ghost { opacity: 0.4; background: var(--pri-l); }
 .p-main { flex: 1; padding: 14px 16px; cursor: pointer; }
 .p-main:hover .p-name { color: var(--pri); }
@@ -393,21 +554,51 @@ async function addSelected() {
 .p-remove:hover { color: #EF4444; }
 
 /* 提报表信息（卡片右侧） */
-.live-info { padding: 14px 16px; border-left: 1px solid var(--bdr); min-width: 200px; background: #FAFBFC; }
+.live-info { padding: 14px 16px; border-left: 1px solid var(--bdr); min-width: 220px; background: #FAFBFC; }
 .live-info-empty { color: var(--txt2); font-size: 12px; font-style: italic; }
+.live-order { font-size: 12px; font-weight: 600; color: var(--pri); margin-bottom: 4px; }
+.live-variant-count { font-size: 11px; color: var(--txt2); margin-bottom: 4px; }
+.live-price-range { font-size: 16px; font-weight: 700; color: var(--red); }
 .live-price { font-size: 20px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
 .live-price::before { content: '¥'; font-size: 14px; }
 .live-gifts { font-size: 12px; color: var(--ok); margin-bottom: 4px; }
 .live-sub { font-size: 11px; color: var(--txt2); }
 .live-sub span + span::before { content: ''; }
 
-/* 产品详情弹窗 */
+/* 产品详情弹窗（全屏） */
+.fs-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+.fs-panel {
+  background: var(--card); width: 94vw; height: 92vh;
+  border-radius: 16px; display: flex; flex-direction: column;
+  overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.fs-hd {
+  padding: 20px 28px; border-bottom: 1px solid var(--bdr);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.fs-hd-left { flex: 1; min-width: 0; }
+.fs-hd h2 { font-size: 22px; margin-bottom: 4px; }
+.fs-hd-sub { font-size: 14px; color: var(--txt2); }
+.fs-close {
+  font-size: 28px; cursor: pointer; color: var(--txt2);
+  background: none; border: none; padding: 4px 10px; line-height: 1;
+}
+.fs-close:hover { color: var(--txt); }
+.fs-bd { padding: 20px 28px 28px; overflow-y: auto; flex: 1; }
+.fs-tags { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+
 .detail-meta { font-size: 14px; color: var(--txt2); margin-bottom: 4px; }
 .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-.detail-html { font-size: 14px; line-height: 1.8; }
+.detail-html { font-size: 15px; line-height: 1.8; max-width: 960px; }
 .detail-html :deep(table) { width: 100%; border-collapse: collapse; margin: 8px 0; }
-.detail-html :deep(th), .detail-html :deep(td) { padding: 6px 8px; border: 1px solid var(--bdr); text-align: left; font-size: 13px; }
+.detail-html :deep(th), .detail-html :deep(td) { padding: 8px 10px; border: 1px solid var(--bdr); text-align: left; font-size: 14px; }
 .detail-html :deep(th) { background: var(--bg); }
+.detail-html :deep(img) { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
 .detail-html :deep([style*="display:none"]) { display: block !important; }
 .detail-empty { text-align: center; padding: 24px; color: var(--txt2); }
 .detail-submission { background: #F9FAFB; border: 1px solid var(--bdr); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
@@ -416,6 +607,13 @@ async function addSelected() {
 .sub-value { color: var(--txt); }
 .sub-price { color: var(--red); font-weight: 700; font-size: 16px; }
 .sub-gift { color: var(--ok); font-weight: 500; }
+
+/* 变体表格 */
+.variant-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 12px; }
+.variant-table th { background: var(--bg); padding: 8px 10px; text-align: left; font-size: 12px; color: var(--txt2); border: 1px solid var(--bdr); }
+.variant-table td { padding: 8px 10px; border: 1px solid var(--bdr); vertical-align: top; }
+.variant-table .price-cell { color: var(--red); font-weight: 600; white-space: nowrap; }
+.common-fields { margin-top: 8px; }
 
 /* 添加产品弹窗 */
 .pick-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; }
@@ -435,8 +633,23 @@ async function addSelected() {
 .match-row { padding: 10px 0; border-bottom: 1px solid var(--bdr); }
 .match-row:last-child { border-bottom: none; }
 .match-excel-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.match-order { font-size: 11px; color: var(--pri); font-weight: 600; margin-bottom: 2px; }
+.match-variant-count { font-size: 11px; color: var(--txt2); margin-bottom: 4px; }
 .match-result-ok { font-size: 13px; color: var(--ok); }
-.match-result-fail { margin-top: 4px; }
+.match-result-fail { margin-top: 4px; position: relative; }
 .match-result-fail .select { width: 100%; font-size: 12px; }
+.match-search { font-size: 12px; padding: 6px 10px; width: 100%; }
+.match-dropdown {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 10;
+  background: var(--card); border: 1px solid var(--bdr); border-radius: 8px;
+  max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.match-dropdown-item {
+  padding: 8px 12px; font-size: 13px; cursor: pointer;
+  border-bottom: 1px solid var(--bdr);
+}
+.match-dropdown-item:last-child { border-bottom: none; }
+.match-dropdown-item:hover { background: var(--pri-l); }
+.match-dropdown-sub { font-size: 11px; color: var(--txt2); margin-left: 6px; }
 .modal-ft { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-top: 1px solid var(--bdr); }
 </style>
