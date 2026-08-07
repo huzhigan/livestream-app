@@ -46,6 +46,13 @@ function listFrom(list: any) {
   const items = list.querySelectorAll('li').map((li: any) => textOf(li)).filter(Boolean)
   return { type: 'list', items }
 }
+function qaFrom(list: any) {
+  const items = list.querySelectorAll('.qa-item').map((li: any) => ({
+    q: cleanText(li.querySelector('.qa-q')?.text || ''),
+    a: cleanText(li.querySelector('.qa-a')?.text || ''),
+  })).filter((it: any) => it.q || it.a)
+  return { type: 'qa', items }
+}
 function chipsFrom(node: any) {
   const items = node.querySelectorAll('.person-chip').map((c: any) => cleanText(c.text)).filter(Boolean)
   return { type: 'chips', items }
@@ -82,6 +89,7 @@ function blocksFromNodes(nodes: any[]): any[] {
 
     if (t === 'table' && cls.includes('dose-table')) { flush(); blocks.push(kvFrom(node)) }
     else if (t === 'table') { flush(); blocks.push(tableFrom(node)) }
+    else if (cls.includes('qa-list') || node.querySelector('.qa-item')) { flush(); blocks.push(qaFrom(node)) }
     else if (t === 'ul' || t === 'ol') { flush(); blocks.push(listFrom(node)) }
     else if (cls.includes('person-chip') || node.querySelector('.person-chip')) { flush(); blocks.push(chipsFrom(node)) }
     else if (cls.includes('sell-content') || node.querySelector('.sell-content') || node.querySelector('.sell-title')) { flush(); blocks.push(sellFrom(node)) }

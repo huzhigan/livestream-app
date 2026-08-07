@@ -47,6 +47,14 @@
           <li v-for="(it, li) in b.items" :key="li">{{ it }}</li>
         </ul>
 
+        <!-- Q&A:一问一答一组 -->
+        <div v-else-if="b.type === 'qa'" class="sd-qa">
+          <div v-for="(it, qi) in b.items" :key="qi" class="sd-qa-item">
+            <div class="sd-qa-q"><span class="sd-qa-mark">Q</span>{{ it.q }}</div>
+            <div v-if="it.a" class="sd-qa-a"><span class="sd-qa-mark a">A</span>{{ it.a }}</div>
+          </div>
+        </div>
+
         <!-- 段落 -->
         <p v-else-if="b.type === 'text'" class="sd-text">{{ b.text }}</p>
 
@@ -106,6 +114,14 @@ function isPrice(cell) {
 .sd-list { list-style: disc; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
 .sd-list li { font-size: 13px; color: var(--txt); line-height: 1.7; }
 .sd-text { font-size: 13px; color: var(--txt); line-height: 1.8; }
+
+/* Q&A */
+.sd-qa { display: flex; flex-direction: column; gap: 10px; }
+.sd-qa-item { background: var(--bg); border: 1px solid var(--bdr); border-radius: 8px; padding: 10px 14px; }
+.sd-qa-q { font-size: 13px; font-weight: 600; color: var(--txt); display: flex; gap: 6px; align-items: baseline; }
+.sd-qa-a { font-size: 12px; color: var(--txt2); margin-top: 4px; display: flex; gap: 6px; align-items: baseline; line-height: 1.6; }
+.sd-qa-mark { flex-shrink: 0; font-size: 10px; font-weight: 700; color: #fff; background: var(--pri); border-radius: 4px; padding: 1px 5px; }
+.sd-qa-mark.a { background: var(--ok); }
 
 /* 兜底 HTML */
 .sd-html { font-size: 13px; line-height: 1.7; }

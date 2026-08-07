@@ -65,6 +65,18 @@
           <button class="btn btn-sm btn-outline" @click="b.items.push({ num: '', title: '', desc: '' })">+ 卖点</button>
         </template>
 
+        <!-- Q&A:一问一答一组 -->
+        <template v-else-if="b.type === 'qa'">
+          <div v-for="(it, qi) in b.items" :key="qi" class="se-qa">
+            <div class="se-qa-hd">
+              <input v-model="it.q" class="input" placeholder="问题">
+              <button class="se-remove" @click="b.items.splice(qi, 1)">&times;</button>
+            </div>
+            <textarea v-model="it.a" class="input" rows="2" placeholder="答案"></textarea>
+          </div>
+          <button class="btn btn-sm btn-outline" @click="b.items.push({ q: '', a: '' })">+ 问答</button>
+        </template>
+
         <!-- 段落 -->
         <textarea v-else-if="b.type === 'text'" v-model="b.text" class="input" rows="3" placeholder="段落文字"></textarea>
 
@@ -84,7 +96,7 @@ const props = defineProps({
   data: { type: Object, required: true }, // reactive structured 对象,直接 mutate
 })
 
-const LABELS = { kv: '键值', table: '表格', chips: '标签', sell: '卖点', list: '列表', text: '段落', html: 'HTML' }
+const LABELS = { kv: '键值', table: '表格', chips: '标签', sell: '卖点', list: '列表', qa: '问答', text: '段落', html: 'HTML' }
 function typeLabel(t) { return LABELS[t] || t }
 
 function addSection() {
@@ -123,6 +135,9 @@ function removeCol(b, ci) {
 .se-sell { border: 1px dashed var(--bdr); border-radius: 6px; padding: 8px; margin-bottom: 6px; }
 .se-sell-hd { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
 .se-sell-num { width: 44px; flex-shrink: 0; }
+
+.se-qa { border: 1px dashed var(--bdr); border-radius: 6px; padding: 8px; margin-bottom: 6px; }
+.se-qa-hd { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
 
 .se-html { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; }
 </style>

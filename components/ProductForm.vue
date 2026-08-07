@@ -115,6 +115,10 @@ function sanitizeStructured(data) {
       const items = (b.items || []).filter(s => s.title?.trim() || s.desc?.trim())
       return items.length ? { ...b, items } : null
     }
+    if (b.type === 'qa') {
+      const items = (b.items || []).filter(it => it.q?.trim() || it.a?.trim())
+      return items.length ? { ...b, items } : null
+    }
     if (b.type === 'table') return (b.rows || []).length ? b : null
     return b // html 兜底保留
   }
