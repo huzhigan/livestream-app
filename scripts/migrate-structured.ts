@@ -112,8 +112,10 @@ function parseProduct(html: string) {
     const title = cleanText(sec.querySelector('.sec-title')?.text || '')
     let blocks = blocksFromNodes(sec.childNodes)
     if (!blocks.length) {
-      // 有内容但没识别 → html 兜底保底;空占位 sec → 留空(渲染跳过)
-      if (cleanText(sec.text)) blocks = [{ type: 'html', html: sec.toString() }]
+      // 判空排除标题文字:仅标题+空占位容器的 sec 视为空,跳过
+      const hdText = cleanText(sec.querySelector('.sec-hd')?.text || '')
+      const bodyText = cleanText(sec.text).replace(hdText, '').trim()
+      if (bodyText) blocks = [{ type: 'html', html: sec.toString() }]
     }
     return { icon, title, blocks }
   })
