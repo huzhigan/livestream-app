@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
       category: body.category || '',
       tags: body.tags || '[]',
       htmlContent: body.htmlContent || '',
+      structured: body.structured || '',
     }
   })
 

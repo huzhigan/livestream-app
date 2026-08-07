@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
       category: body.category ?? existing.category,
       tags: body.tags ?? existing.tags,
       htmlContent: body.htmlContent ?? existing.htmlContent,
+      structured: body.structured ?? existing.structured,
     }
   })
 

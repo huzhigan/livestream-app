@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div :class="['modal-overlay', { open: show }]" @click.self="close">
-      <div class="modal" style="max-width:640px">
+      <div class="modal" :style="{ maxWidth: structuredModel ? '820px' : '640px' }">
         <div class="modal-hd">
           <h2>{{ isEdit ? '编辑产品' : '新增产品' }}</h2>
           <button class="modal-close" @click="close">&times;</button>
@@ -34,7 +34,11 @@
             <label>标签（逗号分隔）</label>
             <input v-model="tagsInput" class="input" placeholder="例：抗老, 淡纹, 夜间修护">
           </div>
-          <div class="form-group">
+          <div v-if="structuredModel" class="form-group">
+            <div class="html-label"><span>产品详细资料（分块编辑）</span></div>
+            <StructuredEditor :data="structuredModel" />
+          </div>
+          <div v-else class="form-group">
             <div class="html-label">
               <span>产品详细资料（HTML）</span>
               <button class="btn btn-sm btn-outline" @click="previewing = !previewing">
@@ -67,6 +71,7 @@ const show = ref(false)
 const saving = ref(false)
 const previewing = ref(false)
 const tagsInput = ref('')
+const structuredModel = ref(null)
 const form = reactive({
   name: '', brand: '', spec: '', category: '', htmlContent: ''
 })
@@ -75,6 +80,7 @@ const isEdit = computed(() => !!props.product?.id)
 
 function open(product) {
   previewing.value = false
+  structuredModel.value = null
   if (product) {
     form.name = product.name
     form.brand = product.brand
@@ -82,11 +88,42 @@ function open(product) {
     form.category = product.category || ''
     form.htmlContent = product.htmlContent || ''
     try { tagsInput.value = JSON.parse(product.tags).join(', ') } catch { tagsInput.value = '' }
+    try {
+      const st = JSON.parse(product.structured || '')
+      if (st && Array.isArray(st.sections)) structuredModel.value = reactive(st)
+    } catch { structuredModel.value = null }
   } else {
     form.name = ''; form.brand = ''; form.spec = ''; form.category = ''
     form.htmlContent = ''; tagsInput.value = ''
   }
   show.value = true
+}
+
+// 清洗结构化数据:去空行/空块/空板块,保证渲染干净
+function sanitizeStructured(data) {
+  const clean = (b) => {
+    if (b.type === 'chips' || b.type === 'list') {
+      const items = (b.items || []).map(s => s.trim()).filter(Boolean)
+      return items.length ? { ...b, items } : null
+    }
+    if (b.type === 'text') return b.text?.trim() ? { ...b, text: b.text.trim() } : null
+    if (b.type === 'kv') {
+      const rows = (b.rows || []).filter(r => r.label?.trim() || r.value?.trim())
+      return rows.length ? { ...b, rows } : null
+    }
+    if (b.type === 'sell') {
+      const items = (b.items || []).filter(s => s.title?.trim() || s.desc?.trim())
+      return items.length ? { ...b, items } : null
+    }
+    if (b.type === 'table') return (b.rows || []).length ? b : null
+    return b // html 兜底保留
+  }
+  return {
+    ...data,
+    sections: (data.sections || [])
+      .map(s => ({ ...s, blocks: (s.blocks || []).map(clean).filter(Boolean) }))
+      .filter(s => s.blocks.length || s.title?.trim()),
+  }
 }
 
 function close() {
@@ -100,16 +137,20 @@ async function save() {
   const tags = JSON.stringify(
     tagsInput.value.split(/[,，]/).map(t => t.trim()).filter(Boolean)
   )
+  const body = { ...form, tags }
+  if (structuredModel.value) {
+    body.structured = JSON.stringify(sanitizeStructured(structuredModel.value))
+  }
   try {
     if (isEdit.value) {
       await $fetch(`/api/products/${props.product.id}`, {
         method: 'PUT',
-        body: { ...form, tags }
+        body,
       })
     } else {
       await $fetch('/api/products', {
         method: 'POST',
-        body: { ...form, tags }
+        body,
       })
     }
     close()
