@@ -8,7 +8,8 @@
       <div class="modal-bd">
         <input v-model="search" class="input" placeholder="搜索产品名称或品牌..." style="margin-bottom:12px">
         <div v-if="!filtered.length" style="text-align:center;padding:24px;color:var(--txt2)">
-          {{ search ? '没有匹配的产品' : '所有产品都已添加到场次中' }}
+          <template v-if="addedMatch">「{{ search }}」已在当前场次中，无需重复添加</template>
+          <template v-else>{{ search ? '没有匹配的产品' : '所有产品都已添加到场次中' }}</template>
         </div>
         <div v-for="p in filtered" :key="p.id"
           :class="['pick-item', { selected: pickedIds.has(p.id) }]" @click="togglePick(p.id)">
@@ -32,6 +33,7 @@
 const props = defineProps({
   open: { type: Boolean, default: false },
   availableProducts: { type: Array, default: () => [] },
+  addedNames: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['close', 'add'])
 
@@ -44,6 +46,13 @@ const filtered = computed(() => {
   return props.availableProducts.filter(p =>
     p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
   )
+})
+
+// 搜索无可选结果,但命中的是已在场次中的产品 → 提示"已在场次中"
+const addedMatch = computed(() => {
+  const q = search.value.toLowerCase()
+  if (!q || filtered.value.length) return false
+  return props.addedNames.some(n => n.toLowerCase().includes(q))
 })
 
 // 打开时重置选择与搜索词

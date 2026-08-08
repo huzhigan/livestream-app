@@ -39,6 +39,7 @@
     <AddProductModal
       :open="showAdd"
       :available-products="availableProducts"
+      :added-names="session.products.map(sp => sp.product.name)"
       @close="closeAdd"
       @add="onAdd"
     />
