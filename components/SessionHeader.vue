@@ -14,6 +14,7 @@
       <div class="actions">
         <button class="btn btn-live" :disabled="!session.products.length" @click="$emit('enter-live')">🔴 直播模式</button>
         <button class="btn btn-outline" @click="$emit('copy')" :disabled="copying">{{ copying ? '复制中...' : '📋 复制场次' }}</button>
+        <button class="btn btn-outline btn-danger" @click="$emit('delete')" title="删除场次">🗑 删除</button>
         <button class="btn btn-outline" @click="triggerUpload">📥 上传提报表</button>
         <button class="btn btn-outline" @click="$emit('open-add')">➕ 添加产品</button>
         <input ref="fileInput" type="file" accept=".xlsx,.xls" style="display:none" @change="onFileChange">
@@ -49,7 +50,7 @@ function onFileChange(e) {
   if (file) emit('upload-file', file)
 }
 
-const emit = defineEmits(['enter-live', 'copy', 'change-status', 'open-add', 'upload-file'])
+const emit = defineEmits(['enter-live', 'copy', 'delete', 'change-status', 'open-add', 'upload-file'])
 </script>
 
 <style scoped>
@@ -60,4 +61,6 @@ const emit = defineEmits(['enter-live', 'copy', 'change-status', 'open-add', 'up
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .status-bar { margin-top: 12px; display: flex; align-items: center; gap: 6px; }
 .status-label { font-size: 12px; color: var(--txt2); }
+.btn-danger { color: var(--red) !important; border-color: var(--red) !important; }
+.btn-danger:hover { background: #FEF2F2 !important; }
 </style>

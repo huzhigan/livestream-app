@@ -9,6 +9,7 @@
         :copying="copying"
         @enter-live="enterLive"
         @copy="copySession"
+        @delete="deleteSession"
         @change-status="changeStatus"
         @open-add="openAdd"
         @upload-file="onUploadFile"
@@ -82,6 +83,18 @@ async function copySession() {
     alert('复制失败: ' + (e.data?.message || e.message))
   } finally {
     copying.value = false
+  }
+}
+
+// --- 删除场次 ---
+async function deleteSession() {
+  if (!confirm(`确定删除场次「${session.value.name}」？\n其下的产品编排和提报表数据将一并删除，不可恢复。`)) return
+  try {
+    await $fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' })
+    toast('场次已删除', 'success')
+    router.push('/sessions')
+  } catch (e) {
+    alert('删除失败: ' + (e.data?.message || e.message))
   }
 }
 
