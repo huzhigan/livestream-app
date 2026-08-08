@@ -27,26 +27,30 @@
       <p>{{ search || statusFilter || platformFilter ? '没有匹配的场次' : '还没有直播场次，点击上方按钮创建第一个' }}</p>
     </div>
     <div v-else class="list">
-      <NuxtLink v-for="s in filteredSessions" :key="s.id" :to="`/sessions/${s.id}`" class="s-card card card-hover">
-        <div class="s-date">
-          <div class="d">{{ dayOf(s.date) }}</div>
-          <div class="m">{{ monthOf(s.date) }}月</div>
-        </div>
-        <div class="s-info">
-          <h4>{{ s.name }}</h4>
-          <div class="s-meta">
-            <span :class="['tag', s.platform === 'xiaohongshu' ? 'tag-xhs' : 'tag-ks']">
-              {{ s.platform === 'xiaohongshu' ? '📕 小红书' : '📹 快手' }}
-            </span>
-            <span :class="['tag', statusTag(s.status)]">{{ statusLabel(s.status) }}</span>
+      <template v-for="(s, i) in orderedSessions" :key="s.id">
+        <div v-if="i === pastStartIndex" class="past-divider">已结束 / 过往场次</div>
+        <NuxtLink :to="`/sessions/${s.id}`" :class="['s-card', 'card', 'card-hover', { past: isPast(s) }]">
+          <div class="s-date">
+            <div class="d">{{ dayOf(s.date) }}</div>
+            <div class="m">{{ monthOf(s.date) }}月</div>
           </div>
-        </div>
-        <div class="s-right">
-          <div class="s-count"><strong>{{ s._count.products }}</strong>产品</div>
-          <button class="btn btn-sm btn-outline" @click.prevent="copySession(s)" title="复制场次">📋</button>
-          <div class="s-arrow">›</div>
-        </div>
-      </NuxtLink>
+          <div class="s-info">
+            <h4>{{ s.name }}</h4>
+            <div class="s-meta">
+              <span :class="['tag', s.platform === 'xiaohongshu' ? 'tag-xhs' : 'tag-ks']">
+                {{ s.platform === 'xiaohongshu' ? '📕 小红书' : '📹 快手' }}
+              </span>
+              <span :class="['tag', statusTag(s.status)]">{{ statusLabel(s.status) }}</span>
+              <span v-if="isPast(s) && s.status !== 'done'" class="tag tag-expired">已过期</span>
+            </div>
+          </div>
+          <div class="s-right">
+            <div class="s-count"><strong>{{ s._count.products }}</strong>产品</div>
+            <button class="btn btn-sm btn-outline" @click.prevent="copySession(s)" title="复制场次">📋</button>
+            <div class="s-arrow">›</div>
+          </div>
+        </NuxtLink>
+      </template>
     </div>
 
     <!-- 新建场次弹窗 -->
@@ -115,6 +119,23 @@ const filteredSessions = computed(() => {
   })
 })
 
+// --- 未开始排前、已结束/过期置底 ---
+const now = new Date()
+const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+function isPast(s) {
+  return s.status === 'done' || (!!s.date && s.date < todayStr)
+}
+
+const orderedSessions = computed(() => {
+  const list = filteredSessions.value
+  const upcoming = list.filter(s => !isPast(s)).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+  const past = list.filter(s => isPast(s)).sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+  return [...upcoming, ...past]
+})
+
+const pastStartIndex = computed(() => orderedSessions.value.findIndex(s => isPast(s)))
+
 // 从首页快捷入口自动打开创建弹窗
 onMounted(() => {
   if (route.query.new === '1') showCreate.value = true
@@ -174,6 +195,18 @@ async function copySession(s) {
 .s-count { font-size: 13px; color: var(--txt2); text-align: right; }
 .s-count strong { font-size: 18px; color: var(--txt); display: block; }
 .s-arrow { color: var(--bdr); font-size: 20px; }
+
+/* 已结束/过期降权 */
+.s-card.past { opacity: 0.55; }
+.s-card.past:hover { opacity: 0.85; }
+.s-card.past .s-date { background: var(--bg); }
+.s-card.past .s-date .d { color: var(--txt2); }
+.past-divider {
+  display: flex; align-items: center; gap: 12px; margin: 18px 0 10px;
+  font-size: 12px; color: var(--txt2);
+}
+.past-divider::before, .past-divider::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
+.tag-expired { background: var(--bg); color: var(--txt2); }
 .form-group { margin-bottom: 18px; }
 .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--txt2); }
 .platform-pick { display: flex; gap: 10px; }
