@@ -175,9 +175,11 @@ const structured = computed(() => {
   } catch { return null }
 })
 
-// 卖点提词：优先 sell 块，回退"卖点"标题板块的列表/段落，最多 5 条
+// 卖点提词：优先手写 teleprompt 覆盖，回退 sell 块，再回退"卖点"标题板块，最多 5 条
 const sellPoints = computed(() => {
   if (!structured.value) return []
+  const manual = (structured.value.teleprompt || []).map(s => String(s).trim()).filter(Boolean)
+  if (manual.length) return manual.slice(0, 5).map(t => ({ title: t, desc: '' }))
   const pts = []
   for (const sec of structured.value.sections)
     for (const b of sec.blocks)

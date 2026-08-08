@@ -35,6 +35,15 @@
             <input v-model="tagsInput" class="input" placeholder="例：抗老, 淡纹, 夜间修护">
           </div>
           <div v-if="structuredModel" class="form-group">
+            <div class="html-label"><span>直播提词（每行一条 · 直播时优先展示，留空则用自动卖点）</span></div>
+            <textarea
+              class="input"
+              rows="4"
+              :value="(structuredModel.teleprompt || []).join('\n')"
+              @input="structuredModel.teleprompt = $event.target.value.split('\n')"
+              placeholder="例：&#10;专利超分子氨基酸，能直接卸防晒&#10;20% 甘油，洗完不紧绷&#10;近效期特价，折合 49.5/支"></textarea>
+          </div>
+          <div v-if="structuredModel" class="form-group">
             <div class="html-label"><span>产品详细资料（分块编辑）</span></div>
             <StructuredEditor :data="structuredModel" />
           </div>
@@ -122,8 +131,10 @@ function sanitizeStructured(data) {
     if (b.type === 'table') return (b.rows || []).length ? b : null
     return b // html 兜底保留
   }
+  const teleprompt = (data.teleprompt || []).map(s => String(s).trim()).filter(Boolean)
   return {
     ...data,
+    teleprompt,
     sections: (data.sections || [])
       .map(s => ({ ...s, blocks: (s.blocks || []).map(clean).filter(Boolean) }))
       .filter(s => s.blocks.length || s.title?.trim()),

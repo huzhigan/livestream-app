@@ -144,6 +144,11 @@ async function main() {
     let structured = ''
     try {
       const data = parseProduct(p.htmlContent)
+      // 保留手写的直播提词,重跑迁移不冲掉
+      try {
+        const prev = JSON.parse(p.structured || '')
+        if (Array.isArray(prev?.teleprompt) && prev.teleprompt.length) data.teleprompt = prev.teleprompt
+      } catch {}
       structured = JSON.stringify(data)
       for (const sec of data.sections) {
         totalSections++
