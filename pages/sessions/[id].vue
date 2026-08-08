@@ -38,8 +38,8 @@
 
     <AddProductModal
       :open="showAdd"
-      :available-products="availableProducts"
-      :added-names="session.products.map(sp => sp.product.name)"
+      :all-products="allProducts || []"
+      :added-ids="session.products.map(sp => sp.productId)"
       @close="closeAdd"
       @add="onAdd"
     />
@@ -121,11 +121,6 @@ function showDetail(sp) { detailProduct.value = sp }
 
 // --- 添加产品弹窗 ---
 const showAdd = ref(false)
-const availableProducts = computed(() => {
-  if (!session.value || !allProducts.value) return []
-  const addedIds = new Set(session.value.products.map(sp => sp.productId))
-  return allProducts.value.filter(p => !addedIds.has(p.id))
-})
 function openAdd() { showAdd.value = true }
 function closeAdd() { showAdd.value = false }
 async function onAdd(productIds) {
