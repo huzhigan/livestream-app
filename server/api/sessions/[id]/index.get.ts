@@ -8,7 +8,21 @@ export default defineEventHandler(async (event) => {
     include: {
       products: {
         orderBy: { sortOrder: 'asc' },
-        include: { product: true }
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              brand: true,
+              spec: true,
+              category: true,
+              tags: true,
+              structured: true,
+              createdAt: true,
+              updatedAt: true,
+            }
+          }
+        }
       }
     }
   })
