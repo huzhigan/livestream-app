@@ -155,6 +155,8 @@ async function save() {
   const body = { ...form, tags }
   if (structuredModel.value) {
     body.structured = JSON.stringify(sanitizeStructured(structuredModel.value))
+    // 结构化编辑不涉及 htmlContent,不传以保留原始备份(列表 API 已不返回 htmlContent)
+    delete body.htmlContent
   }
   try {
     if (isEdit.value) {
