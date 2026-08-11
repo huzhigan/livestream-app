@@ -89,7 +89,7 @@ const isEdit = computed(() => !!props.product?.id)
 
 async function open(product) {
   previewing.value = false
-  structuredModel.value = null
+  structuredModel.value = reactive({ sections: [] })
   if (product) {
     // 列表项只有摘要,编辑时拉完整详情(含 structured/htmlContent)
     let data = product
@@ -102,10 +102,18 @@ async function open(product) {
     form.category = data.category || ''
     form.htmlContent = data.htmlContent || ''
     try { tagsInput.value = JSON.parse(data.tags).join(', ') } catch { tagsInput.value = '' }
+    let parsed = null
     try {
       const st = JSON.parse(data.structured || '')
-      if (st && Array.isArray(st.sections)) structuredModel.value = reactive(st)
-    } catch { structuredModel.value = null }
+      if (st && Array.isArray(st.sections)) parsed = st
+    } catch { parsed = null }
+    if (parsed) {
+      structuredModel.value = reactive(parsed)
+    } else if (data.htmlContent) {
+      // 只有 HTML 没有结构化:保留 HTML 编辑,避免隐藏已有内容
+      structuredModel.value = null
+    }
+    // 其余情况(新建/无内容):保持空分块模型,直接分块编辑
   } else {
     form.name = ''; form.brand = ''; form.spec = ''; form.category = ''
     form.htmlContent = ''; tagsInput.value = ''

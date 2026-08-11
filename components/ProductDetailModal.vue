@@ -83,7 +83,7 @@ const structuredData = computed(() => {
   if (!raw) return null
   try {
     const obj = JSON.parse(raw)
-    return obj && Array.isArray(obj.sections) ? obj : null
+    return obj && Array.isArray(obj.sections) && obj.sections.length ? obj : null
   } catch { return null }
 })
 

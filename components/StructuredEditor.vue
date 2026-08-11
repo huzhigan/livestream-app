@@ -84,7 +84,12 @@
         <textarea v-else v-model="b.html" class="input se-html" rows="4" placeholder="HTML"></textarea>
       </div>
 
-      <button class="btn btn-sm btn-outline" @click="sec.blocks.push({ type: 'text', text: '' })">+ 段落</button>
+      <div class="se-add-block">
+        <select v-model="pendingBlockType" class="select">
+          <option v-for="(label, type) in BLOCK_OPTIONS" :key="type" :value="type">{{ label }}</option>
+        </select>
+        <button class="btn btn-sm btn-outline" @click="addBlock(sec)">添加块</button>
+      </div>
     </div>
 
     <button class="btn btn-outline" @click="addSection">➕ 添加板块</button>
@@ -98,6 +103,25 @@ const props = defineProps({
 
 const LABELS = { kv: '键值', table: '表格', chips: '标签', sell: '卖点', list: '列表', qa: '问答', text: '段落', html: 'HTML' }
 function typeLabel(t) { return LABELS[t] || t }
+
+// 可新建的块类型(html 仅作兜底,不提供新建入口)
+const BLOCK_OPTIONS = { kv: '键值', table: '表格', chips: '标签', sell: '卖点', list: '列表', qa: '问答', text: '段落' }
+const pendingBlockType = ref('text')
+
+function blockTemplate(type) {
+  switch (type) {
+    case 'kv': return { type: 'kv', rows: [{ label: '', value: '' }] }
+    case 'table': return { type: 'table', header: ['', ''], rows: [['', '']] }
+    case 'chips': return { type: 'chips', items: [''] }
+    case 'sell': return { type: 'sell', items: [{ num: '', title: '', desc: '' }] }
+    case 'list': return { type: 'list', items: [''] }
+    case 'qa': return { type: 'qa', items: [{ q: '', a: '' }] }
+    default: return { type: 'text', text: '' }
+  }
+}
+function addBlock(sec) {
+  sec.blocks.push(blockTemplate(pendingBlockType.value))
+}
 
 function addSection() {
   props.data.sections.push({ icon: '', title: '新板块', blocks: [{ type: 'text', text: '' }] })
@@ -123,6 +147,8 @@ function removeCol(b, ci) {
 .se-block { background: var(--card); border: 1px solid var(--bdr); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
 .se-block-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .se-block-type { font-size: 11px; color: var(--txt2); background: var(--bg); padding: 2px 8px; border-radius: 999px; }
+.se-add-block { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+.se-add-block .select { flex: 1; font-size: 12px; padding: 6px 8px; }
 
 .se-kv-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
 .se-kv-row input:first-child { width: 90px; flex-shrink: 0; }
