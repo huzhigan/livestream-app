@@ -9,7 +9,7 @@
     <div class="stats">
       <div class="stat card">
         <div class="stat-label">产品总数</div>
-        <div class="stat-val pri">{{ products?.length || 0 }}</div>
+        <div class="stat-val pri">{{ stats?.productCount || 0 }}</div>
       </div>
       <div class="stat card">
         <div class="stat-label">本月场次</div>
@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-const { data: products } = await useFetch('/api/products')
+const { data: stats } = await useFetch('/api/stats')
 const { data: sessions } = await useFetch('/api/sessions')
 
 const today = () => new Date().toISOString().slice(0, 10)

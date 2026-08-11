@@ -8,7 +8,7 @@
             <div class="fs-hd-sub">{{ product.brand }} · {{ product.spec }}</div>
           </div>
           <div class="fs-hd-actions">
-            <button class="btn btn-outline" @click="emit('edit', product)">编辑</button>
+            <button class="btn btn-outline" @click="onEdit">编辑</button>
             <button class="btn btn-outline btn-danger" @click="emit('delete', product)">删除</button>
             <button class="fs-close" @click="emit('close')">&times;</button>
           </div>
@@ -18,9 +18,11 @@
             <span v-for="t in tags" :key="t" class="tag">{{ t }}</span>
           </div>
 
+          <div v-if="loading" class="fs-loading">加载中...</div>
+
           <!-- 优先结构化渲染,回退 htmlContent -->
-          <StructuredDetail v-if="structuredData" :data="structuredData" />
-          <div v-else-if="product.htmlContent" class="fs-content" v-html="product.htmlContent"></div>
+          <StructuredDetail v-else-if="structuredData" :data="structuredData" />
+          <div v-else-if="htmlContent" class="fs-content" v-html="htmlContent"></div>
 
           <!-- 无内容时显示基础信息卡片 -->
           <div v-else class="fs-placeholder">
@@ -55,19 +57,41 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'edit', 'delete'])
 
+const full = ref(null)
+const loading = ref(false)
+
+// 打开时懒加载完整详情(列表项只有摘要)
+watch(() => props.product, async (p) => {
+  if (!p) { full.value = null; return }
+  loading.value = true
+  try {
+    full.value = await $fetch(`/api/products/${p.id}`)
+  } catch {
+    full.value = null
+  } finally {
+    loading.value = false
+  }
+}, { immediate: true })
+
 const tags = computed(() => {
   if (!props.product) return []
   try { return JSON.parse(props.product.tags) } catch { return [] }
 })
 
 const structuredData = computed(() => {
-  const raw = props.product?.structured
+  const raw = full.value?.structured
   if (!raw) return null
   try {
     const obj = JSON.parse(raw)
     return obj && Array.isArray(obj.sections) ? obj : null
   } catch { return null }
 })
+
+const htmlContent = computed(() => full.value?.htmlContent || '')
+
+function onEdit() {
+  emit('edit', full.value || props.product)
+}
 
 // ESC 关闭弹窗
 function onKey(e) {
@@ -110,6 +134,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 .fs-bd { padding: 20px 28px 28px; overflow-y: auto; flex: 1; }
 
 .fs-tags { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+.fs-loading { text-align: center; padding: 40px; color: var(--txt2); font-size: 14px; }
 
 .fs-content {
   font-size: 15px; line-height: 1.8;

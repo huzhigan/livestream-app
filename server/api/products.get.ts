@@ -1,4 +1,4 @@
-// GET /api/products — 返回产品列表（摘要字段，不含 htmlContent，降低传输体积）
+// GET /api/products — 返回产品列表（仅摘要字段；完整详情按 id 懒加载）
 export default defineEventHandler(async () => {
   const products = await prisma.product.findMany({
     orderBy: { id: 'asc' },
@@ -9,7 +9,6 @@ export default defineEventHandler(async () => {
       spec: true,
       category: true,
       tags: true,
-      structured: true,
       createdAt: true,
       updatedAt: true,
     }

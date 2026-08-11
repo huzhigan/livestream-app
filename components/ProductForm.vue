@@ -87,18 +87,23 @@ const form = reactive({
 
 const isEdit = computed(() => !!props.product?.id)
 
-function open(product) {
+async function open(product) {
   previewing.value = false
   structuredModel.value = null
   if (product) {
-    form.name = product.name
-    form.brand = product.brand
-    form.spec = product.spec || ''
-    form.category = product.category || ''
-    form.htmlContent = product.htmlContent || ''
-    try { tagsInput.value = JSON.parse(product.tags).join(', ') } catch { tagsInput.value = '' }
+    // 列表项只有摘要,编辑时拉完整详情(含 structured/htmlContent)
+    let data = product
+    if (product.id && !product.structured) {
+      try { data = await $fetch(`/api/products/${product.id}`) } catch { data = product }
+    }
+    form.name = data.name
+    form.brand = data.brand
+    form.spec = data.spec || ''
+    form.category = data.category || ''
+    form.htmlContent = data.htmlContent || ''
+    try { tagsInput.value = JSON.parse(data.tags).join(', ') } catch { tagsInput.value = '' }
     try {
-      const st = JSON.parse(product.structured || '')
+      const st = JSON.parse(data.structured || '')
       if (st && Array.isArray(st.sections)) structuredModel.value = reactive(st)
     } catch { structuredModel.value = null }
   } else {
