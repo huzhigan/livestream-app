@@ -97,7 +97,7 @@
 <script setup>
 const route = useRoute()
 const router = useRouter()
-const { data: sessions, pending, refresh } = await useFetch('/api/sessions')
+const { data: sessions, pending, refresh } = await useFetch('/api/sessions', { lazy: true })
 
 const showCreate = ref(false)
 const creating = ref(false)

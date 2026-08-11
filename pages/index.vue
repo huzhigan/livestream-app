@@ -42,7 +42,8 @@
       <span>近期场次</span>
       <NuxtLink to="/sessions">查看全部 →</NuxtLink>
     </div>
-    <div v-if="!sessions?.length" class="empty-note">还没有场次，先去创建一个吧</div>
+    <div v-if="pending" class="empty-note">加载中...</div>
+    <div v-else-if="!sessions?.length" class="empty-note">还没有场次，先去创建一个吧</div>
     <div v-else class="session-list">
       <NuxtLink v-for="s in recentSessions" :key="s.id" :to="`/sessions/${s.id}`" class="s-card card card-hover">
         <div class="s-date">
@@ -63,8 +64,8 @@
 </template>
 
 <script setup>
-const { data: stats } = await useFetch('/api/stats')
-const { data: sessions } = await useFetch('/api/sessions')
+const { data: stats } = await useFetch('/api/stats', { lazy: true })
+const { data: sessions, pending } = await useFetch('/api/sessions', { lazy: true })
 
 const today = () => new Date().toISOString().slice(0, 10)
 

@@ -61,8 +61,8 @@
 <script setup>
 const route = useRoute()
 const sessionId = route.params.id
-const { data: session, pending, refresh } = await useFetch(`/api/sessions/${sessionId}`)
-const { data: allProducts } = await useFetch('/api/products')
+const { data: session, pending, refresh } = await useFetch(`/api/sessions/${sessionId}`, { lazy: true })
+const { data: allProducts } = await useFetch('/api/products', { lazy: true })
 const { parseExcel, matchProducts } = useSubmission()
 const { toast } = useToast()
 
